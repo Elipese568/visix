@@ -1,0 +1,21 @@
+/* sample uxml file */
+App = {
+    $Class = "example::App";
+    $Name = "exampleApp";
+    Property1 = "value";
+    BindProperty1 &= property {
+        Mode = TwoWay;
+        Type = type;
+    };
+}(
+    Element = {
+        $Name = "elem1";
+        PropertyA = "value";
+        PropertyInteger = "1";
+    };
+    Element = {
+        $Name = "elem2";
+        PropertyA = "value";
+        PropertyInteger = "1";
+    };
+);
