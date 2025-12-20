@@ -1,9 +1,12 @@
 /* sample uxml file */
-App = (
+App[
+    local:=app;
+    t:=app.toolkit;
+] = (
     $Class = "example::App";
     $Name = "exampleApp";
     Property1 = "value";
-    BindProperty1 &= property (
+    BindProperty1 &= property.A (
         Mode = TwoWay;
         Type = "type";
     );

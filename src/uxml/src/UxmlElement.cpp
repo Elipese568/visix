@@ -2,25 +2,13 @@
 #include <cctype>
 #include <stdexcept>
 #include <format>
+#include <algorithm>
+#include <unordered_set>
 
 #include "UxmlUtility.hpp"
 #include "binding/BindingOptionBuilder.hpp"
 
 namespace visix::uxml{
-    namespace except{
-        class parse_error final : public std::runtime_error{
-        public:
-            size_t Line;
-            size_t CharacterPos;
-            const std::string &File;
-            parse_error(const std::string& message, const std::string& file, size_t line, size_t chrPos) noexcept : 
-                runtime_error(std::format("error in parser: {}; in file {}, line {}, position {}", message, file, line, chrPos)), 
-                Line(line), 
-                CharacterPos(chrPos), 
-                File(file)
-                {}
-        };
-    }
 	namespace {
 		class Parser {
 		public:
@@ -52,11 +40,11 @@ namespace visix::uxml{
 			bool match(char c){ skipSpace(); if(pos < s.size() && s[pos] == c){ pos++; return true; } return false; }
 			void expect(char c){ skipSpace(); if(pos >= s.size() || s[pos] != c){ throw std::runtime_error("unexpected char"); } pos++; }
 
-			std::string parseIdentifier(){
+			std::string parseIdentifier(bool allowColon = true){
 				skipSpace(); size_t start = pos;
 				if(pos < s.size() && (isalpha((unsigned char)s[pos]) || s[pos] == '$' || s[pos] == '_')){
 					pos++;
-					while(pos < s.size() && (isalnum((unsigned char)s[pos]) || s[pos] == '_' || s[pos] == ':' || s[pos] == '$')) pos++;
+					while(pos < s.size() && (isalnum((unsigned char)s[pos]) || s[pos] == '_' || (s[pos] == ':' && allowColon) || s[pos] == '$')) pos++;
 					return s.substr(start, pos - start);
 				}
 				throw std::runtime_error("identifier expected");
@@ -84,8 +72,8 @@ namespace visix::uxml{
 				throw std::runtime_error("unterminated string");
 			}
 
-			std::vector<UxmlProperty> parseProperties(){
-				std::vector<UxmlProperty> props;
+			std::vector<visix::uxml::UxmlProperty> parseProperties(){
+				std::vector<visix::uxml::UxmlProperty> props;
 				expect('(');
 				while(true){
 					skipSpace(); if(peek() == ')'){ pos++; break; }
@@ -139,22 +127,45 @@ namespace visix::uxml{
 				
 				binding::BindingOptionBuilder builder{};
 				builder.target(targetPath);
-				_Has_Invoke(_Find_Property_By_Name(inner, "Type"), [&builder](const UxmlProperty *e){builder.type(e->value());});
-				_Has_Invoke(_Find_Property_By_Name(inner, "Converter"), [&builder](const UxmlProperty *e){builder.converter(e->value());});
-				_Has_Invoke(_Find_Property_By_Name(inner, "Mode"), [&builder](const UxmlProperty *e){
-					auto v = e->value();
+				_Has_Invoke(_Find_Element_By_Name(inner, "Type"), [&builder](std::reference_wrapper<const UxmlProperty> e){builder.type(e.get().value());});
+				_Has_Invoke(_Find_Element_By_Name(inner, "Converter"), [&builder](std::reference_wrapper<const UxmlProperty> e){builder.converter(e.get().value());});
+				_Has_Invoke(_Find_Element_By_Name(inner, "Mode"), [&builder](std::reference_wrapper<const UxmlProperty> e){
+					auto v = e.get().value();
 					if(v == "FromSource") builder.mode(binding::binding_mode::FromSource);
 					else if(v == "SourceSync") builder.mode(binding::binding_mode::SourceSync);
 				});
 				
                 props.emplace_back(pname, builder.build());
             }
+			
+			std::vector<visix::uxml::UxmlnsDefinition> parseNamespaceDefinitions(){
+				std::vector<visix::uxml::UxmlnsDefinition> uxmlns;
+				pos++;
+				while(peek() != ']'){
+					skipSpace();
+					auto alias = parseIdentifier(false);
+					expect(':');
+					expect('=');
+					auto ns = parseUnquotedValue();
+					skipSpace();
+					if(peek() == ';')
+						pos++;
+					uxmlns.emplace_back(alias, ns);
+				}
+				pos++;
+				return uxmlns;
+			}
 
             UxmlElement parseElement(){
 				std::string name = parseIdentifier();
-				skipSpace(); expect('=');
-				std::vector<UxmlProperty> properties;
-				std::vector<UxmlElement> subElements;
+				std::vector<visix::uxml::UxmlnsDefinition> uxmlns;
+				skipSpace(); if(peek() == '['){
+					uxmlns = parseNamespaceDefinitions();
+				}
+				skipSpace();
+				expect('=');
+				std::vector<visix::uxml::UxmlProperty> properties;
+				std::vector<visix::uxml::UxmlElement> subElements;
 				skipSpace(); if(peek() == '('){
 					properties = parseProperties();
 				}
@@ -172,26 +183,27 @@ namespace visix::uxml{
 				}
 				// optional semicolon
 				skipSpace(); if(peek() == ';') pos++;
-				return UxmlElement(std::move(name), std::move(properties), std::move(subElements));
+				return UxmlElement(std::move(name), std::move(properties), std::move(subElements), std::move(uxmlns));
 			}
 		};
 	}
 }
 
 visix::uxml::UxmlElement::UxmlElement(const std::string& rawString){
-	try{
-		Parser p(rawString);
-		auto root = p.parseElement();
-		*this = std::move(root);
-	} catch(...){
-		// swallow parser errors for noexcept ctor -- keep element empty
-	}
+	Parser p(rawString);
+	auto root = p.parseElement();
+	*this = std::move(root);
 }
 
-visix::uxml::UxmlElement::UxmlElement(std::string name, std::vector<UxmlProperty> properties, std::vector<UxmlElement> subElements) noexcept{
+visix::uxml::UxmlElement::UxmlElement(
+	std::string name, 
+	std::vector<visix::uxml::UxmlProperty>&& properties, 
+	std::vector<visix::uxml::UxmlElement>&& subElements, 
+	std::vector<visix::uxml::UxmlnsDefinition>&& declaredNamespaces) noexcept{
 	this->_name = name;
-	this->_properties = properties;
-	this->_subElements = subElements;
+	this->_properties = std::move(properties);
+	this->_subElements = std::move(subElements);
+	this->_declared_namespaces = std::move(declaredNamespaces);
 }
 
 const std::string& visix::uxml::UxmlElement::name() STABLE {
@@ -210,23 +222,40 @@ const std::vector<visix::uxml::UxmlProperty>& visix::uxml::UxmlElement::properti
 	return this->_properties;
 }
 
+std::vector<visix::uxml::UxmlnsDefinition> visix::uxml::UxmlElement::declaredNamespaces() STABLE {
+	std::vector<visix::uxml::UxmlnsDefinition> combined;
+	combined.insert(combined.end(), this->_declared_namespaces.begin(), this->_declared_namespaces.end());
+	for(const auto &subElem : this->_subElements){
+		auto subNs = subElem.declaredNamespaces();
+		combined.insert(combined.end(), subNs.begin(), subNs.end());
+	}
+	auto iter = std::unique(combined.begin(), combined.end(), [](const visix::uxml::UxmlnsDefinition &a, const visix::uxml::UxmlnsDefinition &b){
+		return a.alias() == b.alias();
+	});
+	combined.erase(iter, combined.end());
+	return combined;
+}
+
 const visix::uxml::UxmlProperty* visix::uxml::UxmlElement::getProperty(const std::string &name) const {
-	auto result = std::find_if(
-		this->_properties.begin(),
-		this->_properties.end(),
-		[&name](const UxmlProperty& p){
-			return p.name() == name;
-		}
-	);
-	if(result == this->_properties.end())
+	auto result = _Find_Element_By_Name(GET_CONSTED_REF_TYPE(visix::uxml::UxmlProperty)(&this->_properties), name);
+	if(!result.has_value()) [[unlikely]]
 		throw std::runtime_error(std::format("Cannot find named property '{}'",name));
 	
-	return &(*result);
+	return &result.value().get();
 }
 const visix::uxml::UxmlElement* visix::uxml::UxmlElement::getSubElement(const std::string &name) const{
-	auto result = _Find_Element_By_Name(this->_subElements, name);
-	if(!result.has_value())
+	auto result = _Find_Element_By_Name(GET_CONSTED_REF_TYPE(visix::uxml::UxmlElement)(&this->_subElements), name);
+	if(!result.has_value()) [[unlikely]]
 		throw std::runtime_error(std::format("Cannot find named element '{}'",name));
 	
-	return result.value();
+	return &result.value().get();
+}
+
+const visix::uxml::UxmlnsDefinition* visix::uxml::UxmlElement::getUxmlns(const std::string& alias) const{
+	auto ns = this->declaredNamespaces();
+	auto result = _Find_Element_By_Name(GET_CONSTED_REF_TYPE(visix::uxml::UxmlnsDefinition)(&ns),alias,[](visix::uxml::UxmlnsDefinition d){return d.alias();});
+	if(!result.has_value()) [[unlikely]]
+		throw std::runtime_error(std::format("Cannot find named uxml namespace '{}'", alias));
+	
+	return &result.value().get();
 }

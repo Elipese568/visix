@@ -3,6 +3,7 @@
 #ifndef GLOBAL_H
 #define GLOBAL_H
 
+#define GET_CONSTED_REF_TYPE(t) *const_cast<std::vector<t>*>
 #define STABLE const noexcept
 
 template<class _Ty, class _Fn>

@@ -14,3 +14,13 @@ visix::uxml::Uxml::Uxml(const std::string& srcFilePath) noexcept {
     std::string fileContent = ss.str();
     _RootElem = std::make_unique<UxmlElement>(fileContent);
 }
+
+const visix::uxml::UxmlElement* visix::uxml::Uxml::root() STABLE {
+    return _RootElem.get();
+}
+
+std::vector<visix::uxml::UxmlnsDefinition> visix::uxml::Uxml::declaredNamespaces() STABLE {
+    if(_RootElem)
+        return _RootElem->declaredNamespaces();
+    return {};
+}
