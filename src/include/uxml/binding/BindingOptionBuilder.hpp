@@ -1,7 +1,7 @@
 #include <vector>
 #include <string>
 
-#include "BindingOption.hpp"
+#include "uxml/binding/BindingOption.hpp"
 
 #ifndef VISIX_BINDING_OPTION_BUILDER
 #define VISIX_BINDING_OPTION_BUILDER

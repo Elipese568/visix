@@ -1,4 +1,4 @@
-#include "UxmlProperty.hpp"
+#include "uxml/UxmlProperty.hpp"
 
 const std::string &visix::uxml::UxmlProperty::name() STABLE{
     return this->_name;

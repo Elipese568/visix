@@ -1,7 +1,7 @@
 #include <sstream>
 #include <memory>
 
-#include "Uxml.hpp"
+#include "uxml/Uxml.hpp"
 
 visix::uxml::Uxml::Uxml(const std::string& srcFilePath) noexcept {
     _Src.open(srcFilePath);

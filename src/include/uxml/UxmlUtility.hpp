@@ -2,7 +2,8 @@
 #include <optional>
 #include <vector>
 
-#include "UxmlElement.hpp"
+#ifndef VISIX_UXML_UTILITY_H
+#define VISIX_UXML_UTILITY_H
 
 namespace visix::uxml {
     template<class _ElemTy>
@@ -43,3 +44,5 @@ namespace visix::uxml {
         return std::ref(*result); // Return a reference to the found element
     }
 }
+
+#endif // VISIX_UXML_UTILITY_H

@@ -1,4 +1,4 @@
-#include "BindingOption.hpp"
+#include "uxml/binding/BindingOption.hpp"
 
 const std::string& visix::uxml::binding::BindingOption::targetPath() STABLE {
     return this->_target;

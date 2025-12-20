@@ -15,7 +15,7 @@ void printElement(const visix::uxml::UxmlElement &e, int indent=0){
         }
         std::cout << '\n';
     }
-    for(const auto &c : e.subElements()){
+    for(const auto &c : e.subelements()){
         printElement(c, indent + 2);
     }
 }

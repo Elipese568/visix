@@ -1,5 +1,5 @@
 #include <string>
-#include "UxmlnsDefinition.hpp"
+#include "uxml/UxmlnsDefinition.hpp"
 
 const std::string& visix::uxml::UxmlnsDefinition::alias() STABLE {
     return this->_alias;

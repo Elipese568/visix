@@ -2,7 +2,7 @@
 #include <fstream>
 #include <memory>
 
-#include "UxmlElement.hpp"
+#include "uxml/UxmlElement.hpp"
 #include "global.h"
 
 #ifndef VISIX_UXML_H

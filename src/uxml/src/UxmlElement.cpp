@@ -5,8 +5,8 @@
 #include <algorithm>
 #include <unordered_set>
 
-#include "UxmlUtility.hpp"
-#include "binding/BindingOptionBuilder.hpp"
+#include "uxml/UxmlUtility.hpp"
+#include "uxml/binding/BindingOptionBuilder.hpp"
 
 namespace visix::uxml{
 	namespace {
@@ -202,7 +202,7 @@ visix::uxml::UxmlElement::UxmlElement(
 	std::vector<visix::uxml::UxmlnsDefinition>&& declaredNamespaces) noexcept{
 	this->_name = name;
 	this->_properties = std::move(properties);
-	this->_subElements = std::move(subElements);
+	this->_subelements = std::move(subElements);
 	this->_declared_namespaces = std::move(declaredNamespaces);
 }
 
@@ -214,8 +214,8 @@ const std::string& visix::uxml::UxmlElement::tag() STABLE {
 	return this->_tag;
 }
 
-const std::vector<visix::uxml::UxmlElement>& visix::uxml::UxmlElement::subElements() STABLE {
-	return this->_subElements;
+const std::vector<visix::uxml::UxmlElement>& visix::uxml::UxmlElement::subelements() STABLE {
+	return this->_subelements;
 }
 
 const std::vector<visix::uxml::UxmlProperty>& visix::uxml::UxmlElement::properties() STABLE {
@@ -225,7 +225,7 @@ const std::vector<visix::uxml::UxmlProperty>& visix::uxml::UxmlElement::properti
 std::vector<visix::uxml::UxmlnsDefinition> visix::uxml::UxmlElement::declaredNamespaces() STABLE {
 	std::vector<visix::uxml::UxmlnsDefinition> combined;
 	combined.insert(combined.end(), this->_declared_namespaces.begin(), this->_declared_namespaces.end());
-	for(const auto &subElem : this->_subElements){
+	for(const auto &subElem : this->_subelements){
 		auto subNs = subElem.declaredNamespaces();
 		combined.insert(combined.end(), subNs.begin(), subNs.end());
 	}
@@ -243,8 +243,8 @@ const visix::uxml::UxmlProperty* visix::uxml::UxmlElement::getProperty(const std
 	
 	return &result.value().get();
 }
-const visix::uxml::UxmlElement* visix::uxml::UxmlElement::getSubElement(const std::string &name) const{
-	auto result = _Find_Element_By_Name(GET_CONSTED_REF_TYPE(visix::uxml::UxmlElement)(&this->_subElements), name);
+const visix::uxml::UxmlElement* visix::uxml::UxmlElement::getSubelement(const std::string &name) const{
+	auto result = _Find_Element_By_Name(GET_CONSTED_REF_TYPE(visix::uxml::UxmlElement)(&this->_subelements), name);
 	if(!result.has_value()) [[unlikely]]
 		throw std::runtime_error(std::format("Cannot find named element '{}'",name));
 	

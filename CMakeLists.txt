@@ -36,6 +36,28 @@ set_target_properties(VisiXUxmlComplier PROPERTIES
   RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 )
 
+# ---------- VisiX SDK ----------
+aux_source_directory(${CMAKE_SOURCE_DIR}/src/sdk/src SDK_SRC_LIST)
+aux_source_directory(${CMAKE_SOURCE_DIR}/src/sdk/src/application SDK_SRC_LIST)
+add_library(VisiXSdk SHARED ${SDK_SRC_LIST})
+target_include_directories(VisiXSdk
+  PUBLIC
+    ${CMAKE_SOURCE_DIR}/src/include
+    ${CMAKE_SOURCE_DIR}/src/include/sdk
+    ${CMAKE_SOURCE_DIR}/src/include/sdk/application
+)
+target_compile_definitions(VisiXSdk
+  PRIVATE VISIX_SDK_EXPORTS
+)
+
+set_target_properties(VisiXSdk PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+
+set_target_properties(VisiXSdk PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+  LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+  ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
 # ---------- Test Preparing ----------
 set(TEST_MATERIAL_DIR material)
 
