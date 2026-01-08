@@ -10,9 +10,6 @@
     "vcpkg.target.hostTriplet": "x64-windows",
     "vcpkg.target.defaultTriplet": "x64-windows",
     "vcpkg.target.useStaticLib": false,
-    "cmake.configureSettings": {
-        "CMAKE_TOOLCHAIN_FILE": "C:/vcpkg/scripts/buildsystems/vcpkg.cmake"
-    },
     "vcpkg.target.installDependencies": true,
     "vcpkg.target.preferSystemLibs": false,
     "cmake.debugConfig": {

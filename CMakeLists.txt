@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.2)
+cmake_minimum_required(VERSION 3.2)
 project(VisiX)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -60,8 +60,22 @@ set_target_properties(VisiXSdk PROPERTIES
 
 # ---------- Test Preparing ----------
 set(TEST_MATERIAL_DIR material)
+set(TEST_PROGRAM_PATH ${CMAKE_SOURCE_DIR}/tests/programs)
 
 execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
   ${CMAKE_SOURCE_DIR}/tests/${TEST_MATERIAL_DIR}
-  ${CMAKE_BINARY_DIR}/bin/tests/${TEST_MATERIAL_DIR}
+  ${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}/tests/${TEST_MATERIAL_DIR}
 )
+
+# ---------- Application Model Test ----------
+
+aux_source_directory(${TEST_PROGRAM_PATH}/application-model/src APPLICATION_MODEL_TEST_SRC_LIST)
+add_executable(ApplicationModelTest ${APPLICATION_MODEL_TEST_SRC_LIST})
+target_link_libraries(ApplicationModelTest PRIVATE VisiXSdk)
+set_target_properties(ApplicationModelTest PROPERTIES
+  RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin/
+)
+
+function(error)
+execute_process("err")
+endfunction(error)
